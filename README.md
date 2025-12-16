@@ -4,7 +4,7 @@
 
 ## Basic usage
 
-This is still work in progress but you can still try to use it.
+This is still work in progress but you _can try_ to use it.
 ```Java
 LayoutContext context = new LayoutContext();
 
