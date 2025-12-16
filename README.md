@@ -1,9 +1,9 @@
 # Clay4j
----
+
 [Clay (short for C Layout)](https://github.com/nicbarker/clay) is a high performance 2D UI layout library written in C by Nic Baker, meanwhile this is a partial reimplementation of Clay but written in Java.
 
 ## Basic usage
----
+
 This is still work in progress but you can still try to use it.
 ```Java
 LayoutContext context = new LayoutContext();
