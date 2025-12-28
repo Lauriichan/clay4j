@@ -125,4 +125,17 @@
             </resource>
         </resources>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <distributionManagement>
+                <repository>
+                    <id>lauriichan</id>
+                    <name>Lauriichan Maven Repository (Release)</name>
+                    <url>https://maven.lauriichan.me/release</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
 </project>

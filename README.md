@@ -2,6 +2,27 @@
 
 [Clay (short for C Layout)](https://github.com/nicbarker/clay) is a high performance 2D UI layout library written in C by Nic Barker, meanwhile this is a partial reimplementation of Clay but written in Java.
 
+## Maven
+Get it from my maven repository
+
+```xml
+<repositories>
+    <repository>
+        <id>lauriichan-release</id>
+        <name>Lauriichan Maven Repository</name>
+        <url>https://maven.lauriichan.me/release</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>me.lauriichan</groupId>
+        <artifactId>clay4j</artifactId>
+        <version>0.0.1</version>
+    </dependency>
+</dependencies>
+```
+
 ## Basic usage
 
 This is still work in progress but you _can try_ to use it.
