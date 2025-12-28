@@ -5,14 +5,14 @@ import java.util.function.Consumer;
 public final class ElementContext {
 
     private final float layoutWidth, layoutHeight;
-    private final Consumer<ElementRenderer.RenderCommand> pushCommand;
+    private final Consumer<RenderCommand> pushCommand;
 
     int zIndex;
     boolean emitRectangle;
     boolean offscreen;
     BoundingBox boundingBox;
 
-    public ElementContext(float layoutWidth, float layoutHeight, Consumer<ElementRenderer.RenderCommand> pushCommand) {
+    public ElementContext(float layoutWidth, float layoutHeight, Consumer<RenderCommand> pushCommand) {
         this.layoutWidth = layoutWidth;
         this.layoutHeight = layoutHeight;
         this.pushCommand = pushCommand;
@@ -54,7 +54,7 @@ public final class ElementContext {
         this.emitRectangle = emitRectangle;
     }
 
-    public void push(ElementRenderer.RenderCommand command) {
+    public void push(RenderCommand command) {
         pushCommand.accept(command);
     }
 

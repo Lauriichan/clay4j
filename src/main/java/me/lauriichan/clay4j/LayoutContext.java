@@ -115,7 +115,7 @@ public final class LayoutContext {
 
     private final Int2ObjectMap<MeasuredText> textCache = new Int2ObjectArrayMap<>(TEXT_CACHE_MAX_SIZE);
 
-    private final AtomicReference<ObjectList<ElementRenderer.RenderCommand>> renderCommands = new AtomicReference<>(ObjectList.of());
+    private final AtomicReference<ObjectList<RenderCommand>> renderCommands = new AtomicReference<>(ObjectList.of());
 
     private final ObjectArrayList<Element> hovered = new ObjectArrayList<>();
     private final ObjectList<Element> immutableHovered = ObjectLists.unmodifiable(hovered);
@@ -342,13 +342,14 @@ public final class LayoutContext {
         return changed;
     }
 
-    public ObjectList<ElementRenderer.RenderCommand> renderCommands() {
+    public ObjectList<RenderCommand> renderCommands() {
         return renderCommands.get();
     }
 
     public void reset() {
         roots.clear();
         textElements.clear();
+        aspectRatioElements.clear();
         id2elementMap.clear();
         scrollDataList.forEach(data -> data.element = null);
         changed = true;
@@ -388,7 +389,7 @@ public final class LayoutContext {
         sortedRoots.sort((e1, e2) -> Integer.max(e1.zIndex, e2.zIndex));
 
         // Calculate final positions
-        ObjectArrayList<ElementRenderer.RenderCommand> renderCommands = new ObjectArrayList<>();
+        ObjectArrayList<RenderCommand> renderCommands = new ObjectArrayList<>();
         ElementContext context = new ElementContext(layoutWidth, layoutHeight, renderCommands::push);
         for (Element root : sortedRoots) {
             root.x = root.y = 0f;
@@ -472,7 +473,7 @@ public final class LayoutContext {
                 Element element = id2elementMap.get(root.clipElementId);
                 if (element != null && element.boundingBox != null) {
                     rootHasToBeClosed = true;
-                    renderCommands.add(new ElementRenderer.RenderCommand(ElementRenderer.CLIPPING_START_ID, root, element.boundingBox));
+                    renderCommands.add(new RenderCommand(RenderCommand.CLIPPING_START_ID, root, element.boundingBox));
                 }
             }
             context.zIndex = root.zIndex;
@@ -513,8 +514,7 @@ public final class LayoutContext {
                     }
 
                     if (context.emitRectangle) {
-                        renderCommands.push(
-                            new ElementRenderer.RenderCommand(ElementRenderer.RECTANGLE_RENDERER_ID, context.zIndex, element, elementBox));
+                        renderCommands.push(new RenderCommand(RenderCommand.RECTANGLE_RENDERER_ID, context.zIndex, element, elementBox));
                     }
 
                     if (!element.isText) {
@@ -583,7 +583,7 @@ public final class LayoutContext {
                     //                    }
                     if (closeClip) {
                         renderCommands
-                            .push(new ElementRenderer.RenderCommand(ElementRenderer.CLIPPING_END_ID, element, element.boundingBox));
+                            .push(new RenderCommand(RenderCommand.CLIPPING_END_ID, element, element.boundingBox));
                     }
                 }
 
@@ -636,7 +636,7 @@ public final class LayoutContext {
             }
 
             if (rootHasToBeClosed) {
-                renderCommands.push(new ElementRenderer.RenderCommand(ElementRenderer.CLIPPING_END_ID, root, root.boundingBox));
+                renderCommands.push(new RenderCommand(RenderCommand.CLIPPING_END_ID, root, root.boundingBox));
             }
 
         }

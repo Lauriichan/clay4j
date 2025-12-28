@@ -1,6 +1,5 @@
 package me.lauriichan.clay4j;
 
-import me.lauriichan.clay4j.ElementRenderer.RenderCommand;
 import me.lauriichan.clay4j.Layout.HAlignment;
 import me.lauriichan.clay4j.buildergen.GenerateBuilder;
 import me.lauriichan.clay4j.data.TextElementData;
@@ -61,7 +60,7 @@ public interface IElementConfig_ {
                 } else if (config.alignment() == HAlignment.CENTER) {
                     offset /= 2f;
                 }
-                context.push(new RenderCommand(ElementRenderer.TEXT_RENDERER_ID, context.zIndex, element, new BoundingBox(box.x + offset, box.y + yPosition, line.width(), line.height()), line.text()));
+                context.push(new RenderCommand(RenderCommand.TEXT_RENDERER_ID, context.zIndex, element, new BoundingBox(box.x + offset, box.y + yPosition, line.width(), line.height()), line.text()));
                 yPosition += finalLineHeight;
                 if (box.y + yPosition > context.layoutHeight()) {
                     break;
@@ -128,7 +127,7 @@ public interface IElementConfig_ {
         
         @Override
         public void buildCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
-            context.push(new RenderCommand(ElementRenderer.CLIPPING_START_ID, element, context.boundingBox()));
+            context.push(new RenderCommand(RenderCommand.CLIPPING_START_ID, element, context.boundingBox()));
         }
         
     }
