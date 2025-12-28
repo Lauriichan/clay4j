@@ -5,13 +5,14 @@ import java.util.Optional;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import me.lauriichan.clay4j.buildergen.BuilderDefault;
+import me.lauriichan.clay4j.buildergen.BuilderTransformer;
 import me.lauriichan.clay4j.buildergen.GenerateBuilder;
 import me.lauriichan.clay4j.buildergen.ListReference;
 import me.lauriichan.clay4j.buildergen.ListReference.Unmodifiable;
 
 @GenerateBuilder
 public record Layout_(ISizing width, ISizing height, Padding padding, int childGap, VAlignment childVerticalAlignment, HAlignment childHorizontalAlignment,
-    LayoutDirection layoutDirection, @ListReference(unmodifiable = @Unmodifiable(type = ObjectLists.class, method = "unmodifiable")) ObjectList<IElementConfig> configs) {
+    LayoutDirection layoutDirection, boolean renderBackground, @ListReference(unmodifiable = @Unmodifiable(type = ObjectLists.class, method = "unmodifiable")) ObjectList<IElementConfig> configs) {
 
     @BuilderDefault({
         "width",
@@ -28,6 +29,19 @@ public record Layout_(ISizing width, ISizing height, Padding padding, int childG
     public static final HAlignment DEFAULT_CHILD_HORIZONTAL_ALIGNMENT = HAlignment.LEFT;
     @BuilderDefault("layoutDirection")
     public static final LayoutDirection DEFAULT_LAYOUT_DIRECTION = LayoutDirection.LEFT_TO_RIGHT;
+    @BuilderDefault("renderBackground")
+    public static final boolean DEFAULT_RENDER_BACKGROUND = false;
+    
+    @BuilderTransformer("configs")
+    private static ObjectList<IElementConfig> sort(ObjectList<IElementConfig> list) {
+        list.sort((e1, e2) -> {
+            if (e1 instanceof IElementConfig.Border || e2 instanceof IElementConfig.Clip) {
+                return 1;
+            }
+            return 0;
+        });
+        return list;
+    }
     
     public <E extends IElementConfig> Optional<E> config(Class<E> type) {
         for (IElementConfig config : configs) {

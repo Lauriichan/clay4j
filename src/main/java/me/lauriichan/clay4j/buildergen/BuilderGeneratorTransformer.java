@@ -34,6 +34,8 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
 
     private static record BuilderRef(String builderMethod) implements IRef {}
 
+    private static record TransformerRef(String transformerMethod) implements IRef {}
+
     private static record Ignored() implements IRef {}
 
     private static final Ignored IGNORED = new Ignored();
@@ -86,10 +88,12 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
         }
         HashMap<String, String> defaultValues = new HashMap<>();
         List<? extends ParameterSource<?>> parameters = List.of();
+        List<? extends MethodSource<?>> methods = List.of();
         List<String> fieldNames = new ArrayList<>();
         fieldNames.add("this");
         if (dataSource instanceof JavaRecordSource recordSource) {
             parameters = recordSource.getRecordComponents();
+            methods = recordSource.getMethods();
             parameters.stream().map(ParameterSource::getName).forEach(fieldNames::add);
             SourceTransformerUtils.getFields(recordSource).stream().filter(field -> field.hasAnnotation(BuilderDefault.class))
                 .forEach(field -> {
@@ -108,6 +112,7 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
                     defaultValues.put(component, field.getName());
                 }
             });
+            methods = classSource.getMethods();
             List<MethodSource<JavaClassSource>> constructors = classSource.getMethods().stream().filter(method -> method.isConstructor())
                 .toList();
             MethodSource<JavaClassSource> targetConstructor = constructors.get(0);
@@ -126,7 +131,22 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
             dataSource.addImport(Objects.class);
         }
 
+        References buildReferences = new References();
         References references = new References();
+        for (MethodSource<?> method : methods) {
+            if (!method.isStatic()) {
+                continue;
+            }
+            if (method.hasAnnotation(BuilderTransformer.class)) {
+                String paramName = string(method.getAnnotation(BuilderTransformer.class), "value", "");
+                ParameterSource<?> param = parameters.stream().filter(src -> src.getName().equals(paramName)).findFirst().orElse(null);
+                if (param == null) {
+                    System.err.println("Couldn't find parameter reference '%s' for transformer method '%s'".formatted(paramName, method.getName()));
+                    continue;
+                }
+                buildReferences.put(param, new TransformerRef(method.getName()));
+            }
+        }
         for (ParameterSource<?> parameter : parameters) {
             if (parameter.hasAnnotation(BuilderIgnore.class)) {
                 references.put(parameter, IGNORED);
@@ -191,6 +211,7 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
             StringBuilder builder = new StringBuilder();
             for (ParameterSource<?> parameter : parameters) {
                 IRef ref = references.get(parameter);
+                IRef buildRef = buildReferences.get(parameter);
                 if (ref == IGNORED) {
                     continue;
                 }
@@ -198,13 +219,19 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
                 if (!builder.isEmpty()) {
                     builder.append(", ");
                 }
+                StringBuilder paramReference = new StringBuilder().append("this.").append(parameter.getName());
+                if (buildRef instanceof TransformerRef transform) {
+                    paramReference.insert(0, '(');
+                    paramReference.insert(0, transform.transformerMethod);
+                    paramReference.append(')');
+                }
                 if (ref instanceof BuilderRef) {
-                    builder.append("this.").append(parameter.getName()).append(".build()");
+                    builder.append(paramReference).append(".build()");
                 } else if (ref instanceof ListRef listRef && listRef.unmodifiableMethod() != null) {
-                    builder.append(listRef.unmodifiableType()).append('.').append(listRef.unmodifiableMethod()).append("(this.")
-                        .append(parameter.getName()).append(')');
+                    builder.append(listRef.unmodifiableType()).append('.').append(listRef.unmodifiableMethod()).append("(")
+                        .append(paramReference).append(')');
                 } else {
-                    builder.append("this.").append(parameter.getName());
+                    builder.append(paramReference);
                 }
             }
             builderClass.addMethod().setName("build").setPublic()

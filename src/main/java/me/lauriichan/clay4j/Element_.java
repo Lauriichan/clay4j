@@ -9,42 +9,46 @@ import me.lauriichan.clay4j.Layout.LayoutDirection;
 import me.lauriichan.clay4j.buildergen.BuilderReference;
 import me.lauriichan.clay4j.buildergen.FieldReference;
 import me.lauriichan.clay4j.buildergen.GenerateBuilder;
-import me.lauriichan.clay4j.data.TextElementData;
 
 @GenerateBuilder(name = "newElement", internal = true, rootName = "builder")
 public final class Element_ implements AutoCloseable {
 
-    private final LayoutContext context;
+    public final LayoutContext context;
+
+    public final long rootTime;
+
+    public final Element_ parent;
+    public final Layout layout;
+
+    public final String elementId, clipElementId;
+
+    public final boolean clipsVertical, clipsHorizontal;
+    public final boolean isFloating, isText, hasAspectRatio;
+
     private final ObjectList<IElementData> elementData;
 
-    private final long rootTime;
-    
+    private volatile boolean isClosed = false;
+
     final ObjectArrayList<Element_> children = new ObjectArrayList<>(), parentElements;
 
-    final Element_ parent;
-    final Layout layout;
+    BoundingBox boundingBox;
 
-    final String attachId;
-
+    float x, y;
     float minWidth, width;
     float minHeight, height;
+    
+    boolean hovered = false;
 
-    final boolean clipsVertical, clipsHorizontal;
-    final boolean isFloating, isText;
-
-    final IRenderable renderable;
-
-    volatile boolean isClosed = false;
+    int zIndex = 0;
 
     Element_(@FieldReference LayoutContext context, @FieldReference("this") Element_ parent, @BuilderReference Layout layout,
-        String attachId, IRenderable renderable) {
+        String elementId) {
         this.parentElements = parent == null ? new ObjectArrayList<>() : parent.parentElements;
         this.rootTime = parent == null ? System.currentTimeMillis() : parent.rootTime;
         this.context = context;
         this.parent = parent;
         this.layout = layout;
-        this.attachId = attachId;
-        this.renderable = renderable;
+        this.elementId = elementId;
         IElementConfig.Clip clip = layout.config(IElementConfig.Clip.class).orElse(null);
         if (clip != null) {
             clipsHorizontal = clip.horizontal();
@@ -52,24 +56,21 @@ public final class Element_ implements AutoCloseable {
         } else {
             clipsHorizontal = clipsVertical = false;
         }
+        this.hasAspectRatio = layout.config(IElementConfig.AspectRatio.class).isPresent();
         this.isFloating = layout.config(IElementConfig.Floating.class).isPresent();
+        // TODO: Root scroll containers still kinda don't work yet like this
+        // This has to be set somewhere but not really a clue where yet
+        this.clipElementId = null;
         this.isText = layout.config(IElementConfig.Text.class).isPresent();
-        this.elementData = ObjectLists.unmodifiable(buildElementData());
-    }
-    
-    private ObjectList<IElementData> buildElementData() {
         ObjectArrayList<IElementData> list = new ObjectArrayList<>();
-        if (isText) {
-            IElementConfig.Text text = layout.config(IElementConfig.Text.class).get();
-            LayoutContext.MeasuredText measured = context.measuredText(rootTime, text);
-            width = measured.width;
-            height = text.lineHeight() > 0 ? text.lineHeight() : measured.height;
-            minWidth = measured.minWidth;
-            minHeight = height;
-            list.add(new TextElementData(measured.width, measured.height));
+        for (IElementConfig config : layout.configs()) {
+            IElementData data = config.buildData((Element) (Object) this);
+            if (data == null) {
+                continue;
+            }
+            list.add(data);
         }
-        // TODO: Add scroll data
-        return list;
+        this.elementData = ObjectLists.unmodifiable(list);
     }
 
     public <E extends IElementData> Optional<E> data(Class<E> type) {
@@ -80,6 +81,14 @@ public final class Element_ implements AutoCloseable {
         }
         return Optional.empty();
     }
+    
+    public LayoutContext context() {
+        return context;
+    }
+    
+    public boolean isHovered() {
+        return hovered;
+    }
 
     @Override
     public void close() {
@@ -88,12 +97,10 @@ public final class Element_ implements AutoCloseable {
         }
         isClosed = true;
 
-        if (!isText && !children.isEmpty()) {
+        if (!isText && !isFloating && !children.isEmpty()) {
             parentElements.add(this);
         }
-        if (isText) {
-            context.addText(this);
-        }
+        context.addElement((Element) (Object) this);
 
         float leftRightPadding = layout.padding().left() + layout.padding().right();
         float topBottomPadding = layout.padding().top() + layout.padding().bottom();
@@ -157,9 +164,8 @@ public final class Element_ implements AutoCloseable {
 
         updateAspectRatioBox();
 
-        context.setAttachId(attachId, this);
+        context.setElementId(elementId, (Element) (Object) this);
         if (parent == null) {
-            context.addRoot(this);
             return;
         }
         if (parent.isText) {

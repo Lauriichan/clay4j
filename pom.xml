@@ -89,7 +89,8 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>me/lauriichan/clay4j/**/*_.class</include>
+                                <include>me/lauriichan/clay4j/*_*.class</include>
+                                <include>me/lauriichan/clay4j/**/*_*.class</include>
                                 <include>me/lauriichan/clay4j/buildergen/**/*.class</include>
                             </includes>
                             <purgeEmptyPackages>true</purgeEmptyPackages>
