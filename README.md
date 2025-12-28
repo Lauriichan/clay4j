@@ -85,4 +85,4 @@ It is not yet able to resize/wrap text and it doesn't calculate the positions of
 ## Goal
 
 The reason for this reimplementation is simple, I wanted an actual layouting library in java which I can use in my projects and I was so fascinated by Clay so I decided to reimplement it in Java.
-Don't except this port to be amazing in very possible way or feel super similar to the original Clay, it's Java and it's okay to use I think.
+Don't expect this port to be amazing in every possible way or feel super similar to the original Clay, it's Java and it's okay to use I think.
