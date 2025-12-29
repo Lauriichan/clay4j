@@ -2,6 +2,7 @@ package me.lauriichan.clay4j;
 
 import java.util.Optional;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import me.lauriichan.clay4j.buildergen.BuilderDefault;
@@ -32,8 +33,16 @@ public record Layout_(ISizing width, ISizing height, Padding padding, int childG
     @BuilderDefault("renderBackground")
     public static final boolean DEFAULT_RENDER_BACKGROUND = false;
     
+    @BuilderDefault("configs")
+    private static final ObjectList<IElementConfig> newConfigList() {
+        return new ObjectArrayList<>();
+    }
+    
     @BuilderTransformer("configs")
     private static ObjectList<IElementConfig> sort(ObjectList<IElementConfig> list) {
+        if (list == null) {
+            return ObjectLists.emptyList();
+        }
         list.sort((e1, e2) -> {
             if (e1 instanceof IElementConfig.Border || e2 instanceof IElementConfig.Clip) {
                 return 1;
@@ -46,7 +55,7 @@ public record Layout_(ISizing width, ISizing height, Padding padding, int childG
     public <E extends IElementConfig> Optional<E> config(Class<E> type) {
         for (IElementConfig config : configs) {
             if (type.isAssignableFrom(config.getClass())) {
-                return Optional.of(type.cast(type));
+                return Optional.of(type.cast(config));
             }
         }
         return Optional.empty();

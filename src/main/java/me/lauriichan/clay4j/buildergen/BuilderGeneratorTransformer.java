@@ -89,29 +89,17 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
         HashMap<String, String> defaultValues = new HashMap<>();
         List<? extends ParameterSource<?>> parameters = List.of();
         List<? extends MethodSource<?>> methods = List.of();
+        List<? extends FieldSource<?>> fields = List.of();
         List<String> fieldNames = new ArrayList<>();
         fieldNames.add("this");
         if (dataSource instanceof JavaRecordSource recordSource) {
             parameters = recordSource.getRecordComponents();
             methods = recordSource.getMethods();
             parameters.stream().map(ParameterSource::getName).forEach(fieldNames::add);
-            SourceTransformerUtils.getFields(recordSource).stream().filter(field -> field.hasAnnotation(BuilderDefault.class))
-                .forEach(field -> {
-                    AnnotationSource<JavaRecordSource> annotation = field.getAnnotation(BuilderDefault.class);
-                    String[] components = annotation.getStringArrayValue();
-                    for (String component : components) {
-                        defaultValues.put(component, field.getName());
-                    }
-                });
+            fields = SourceTransformerUtils.getFields(recordSource);
         } else if (dataSource instanceof JavaClassSource classSource) {
             classSource.getFields().stream().filter(field -> !field.isStatic()).map(FieldSource::getName).forEach(fieldNames::add);
-            classSource.getFields().stream().filter(field -> field.hasAnnotation(BuilderDefault.class)).forEach(field -> {
-                AnnotationSource<JavaClassSource> annotation = field.getAnnotation(BuilderDefault.class);
-                String[] components = annotation.getStringArrayValue();
-                for (String component : components) {
-                    defaultValues.put(component, field.getName());
-                }
-            });
+            fields = classSource.getFields();
             methods = classSource.getMethods();
             List<MethodSource<JavaClassSource>> constructors = classSource.getMethods().stream().filter(method -> method.isConstructor())
                 .toList();
@@ -126,6 +114,26 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
             }
             parameters = targetConstructor.getParameters();
         }
+        fields.stream().filter(field -> field.hasAnnotation(BuilderDefault.class)).forEach(field -> {
+            if (!field.isStatic()) {
+                return;
+            }
+            AnnotationSource<?> annotation = field.getAnnotation(BuilderDefault.class);
+            String[] components = annotation.getStringArrayValue();
+            for (String component : components) {
+                defaultValues.put(component, field.getName());
+            }
+        });
+        methods.stream().filter(method -> method.hasAnnotation(BuilderDefault.class)).forEach(method -> {
+            if (!method.isStatic() || !method.getParameters().isEmpty()) {
+                return;
+            }
+            AnnotationSource<?> annotation = method.getAnnotation(BuilderDefault.class);
+            String[] components = annotation.getStringArrayValue();
+            for (String component : components) {
+                defaultValues.put(component, method.getName() + "()");
+            }
+        });
 
         if (!dataSource.hasImport(Objects.class)) {
             dataSource.addImport(Objects.class);
@@ -304,7 +312,11 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
             }
             case ListRef listRef -> {
                 qualifiedType = buildTypeNameWithGenerics(type);
-                builderField.setType(qualifiedType);
+                builderField.setFinal(true).setType(qualifiedType);
+                String defaultParam = defaultValues.get(name);
+                if (defaultParam != null) {
+                    builderField.setLiteralInitializer(defaultParam);
+                }
                 String argumentType = buildTypeNameWithGenerics(type.getTypeArguments().get(0));
                 String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
                 MethodSource<JavaClassSource> adder = builderClass.addMethod().setPublic().setFinal(true);

@@ -585,6 +585,9 @@ public final class LayoutContext {
                         renderCommands
                             .push(new RenderCommand(RenderCommand.CLIPPING_END_ID, element, element.boundingBox));
                     }
+
+                    nodes.removeLast();
+                    continue;
                 }
 
                 for (int childIndex = 0; childIndex < element.children.size(); childIndex++) {
@@ -630,9 +633,6 @@ public final class LayoutContext {
                         node.offsetY += child.height + element.layout.childGap();
                     }
                 }
-
-                nodes.removeLast();
-                continue;
             }
 
             if (rootHasToBeClosed) {
@@ -846,14 +846,17 @@ public final class LayoutContext {
                 root.height = Math.min(Math.max(root.height, root.layout.height().minMax().min()), root.layout.height().minMax().max());
             }
 
-            for (Element parent : root.parentElements) {
+            ObjectArrayList<Element> stack = new ObjectArrayList<>();
+            stack.push(root);
+            while (!stack.isEmpty()) {
+                Element parent = stack.pop();
                 float parentSize = xAxis ? parent.width : parent.height;
                 float parentPadding = xAxis ? parent.layout.padding().left() + parent.layout.padding().right()
                     : parent.layout.padding().top() + parent.layout.padding().bottom();
                 float parentChildGap = parent.layout.childGap();
                 float innerSize = 0, totalPaddingAndChildGaps = parentPadding;
-                boolean sizingAlongAxis = (xAxis && parent.layout.layoutDirection() == LayoutDirection.LEFT_TO_RIGHT)
-                    || (!xAxis && parent.layout.layoutDirection() == LayoutDirection.TOP_TO_BOTTOM);
+                boolean sizingAlongAxis = (xAxis && (parent.layout.layoutDirection() == LayoutDirection.LEFT_TO_RIGHT))
+                    || (!xAxis && (parent.layout.layoutDirection() == LayoutDirection.TOP_TO_BOTTOM));
                 boolean isClipping = (xAxis && parent.clipsHorizontal) || (!xAxis && parent.clipsVertical);
 
                 boolean hasGrowable = false;
@@ -867,6 +870,10 @@ public final class LayoutContext {
                     child = parent.children.get(i);
                     sizing = xAxis ? child.layout.width() : child.layout.height();
                     size = xAxis ? child.width : child.height;
+                    
+                    if (!child.children.isEmpty()) {
+                        stack.push(child);
+                    }
 
                     if (sizing.type() != ISizing.Type.PERCENTAGE && sizing.type() != ISizing.Type.FIXED
                         && child.layout.config(IElementConfig.Text.class).filter(cfg -> cfg.wrapMode() != WrapMode.WRAP_WORDS).isEmpty()) {
@@ -1015,7 +1022,7 @@ public final class LayoutContext {
                             maxSize = Math.max(maxSize, innerSize);
                         }
                         if (sizing.type() == ISizing.Type.GROW) {
-                            size = Math.min(maxSize, sizing.minMax().max());
+                            size = Math.max(maxSize, sizing.minMax().max());
                         }
                         size = Math.max(minSize, Math.min(size, maxSize));
                     }

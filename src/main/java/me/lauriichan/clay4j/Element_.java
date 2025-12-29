@@ -43,12 +43,13 @@ public final class Element_ implements AutoCloseable {
 
     Element_(@FieldReference LayoutContext context, @FieldReference("this") Element_ parent, @BuilderReference Layout layout,
         String elementId) {
-        this.parentElements = parent == null ? new ObjectArrayList<>() : parent.parentElements;
         this.rootTime = parent == null ? System.currentTimeMillis() : parent.rootTime;
         this.context = context;
         this.parent = parent;
         this.layout = layout;
         this.elementId = elementId;
+        this.isFloating = layout.config(IElementConfig.Floating.class).isPresent();
+        this.parentElements = parent == null || isFloating ? new ObjectArrayList<>() : parent.parentElements;
         IElementConfig.Clip clip = layout.config(IElementConfig.Clip.class).orElse(null);
         if (clip != null) {
             clipsHorizontal = clip.horizontal();
@@ -57,7 +58,6 @@ public final class Element_ implements AutoCloseable {
             clipsHorizontal = clipsVertical = false;
         }
         this.hasAspectRatio = layout.config(IElementConfig.AspectRatio.class).isPresent();
-        this.isFloating = layout.config(IElementConfig.Floating.class).isPresent();
         // TODO: Root scroll containers still kinda don't work yet like this
         // This has to be set somewhere but not really a clue where yet
         this.clipElementId = null;
@@ -76,7 +76,7 @@ public final class Element_ implements AutoCloseable {
     public <E extends IElementData> Optional<E> data(Class<E> type) {
         for (IElementData data : this.elementData) {
             if (type.isAssignableFrom(data.getClass())) {
-                return Optional.of(type.cast(type));
+                return Optional.of(type.cast(data));
             }
         }
         return Optional.empty();
@@ -96,8 +96,12 @@ public final class Element_ implements AutoCloseable {
             return;
         }
         isClosed = true;
+        
+        if (parent != null && parent.isText) {
+            throw new IllegalStateException("Text can't have child elements");
+        }
 
-        if (!isText && !isFloating && !children.isEmpty()) {
+        if (!isText && (!children.isEmpty() || parent == null || isFloating)) {
             parentElements.add(this);
         }
         context.addElement((Element) (Object) this);
@@ -168,9 +172,6 @@ public final class Element_ implements AutoCloseable {
         if (parent == null) {
             return;
         }
-        if (parent.isText) {
-            throw new IllegalStateException("Text can't have child elements");
-        }
         // Floating elements are not added as children apparently
         if (!isFloating) {
             parent.children.add(this);
@@ -188,6 +189,31 @@ public final class Element_ implements AutoCloseable {
                 height = width * (1 / aspectRatio.aspectRatio());
             }
         });
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        appendField(builder, "elementId", elementId);
+        appendField(builder, "clipElementId", clipElementId);
+        appendField(builder, "x", x);
+        appendField(builder, "y", y);
+        appendField(builder, "z", zIndex);
+        appendField(builder, "width", width);
+        appendField(builder, "minWidth", minWidth);
+        appendField(builder, "height", height);
+        appendField(builder, "minHeight", minHeight);
+        return builder.insert(0, "Element[").append(']').toString();
+    }
+    
+    private void appendField(StringBuilder builder, String name, Object value) {
+        if (!builder.isEmpty()) {
+            builder.append(", ");
+        }
+        if (value == null) {
+            value = "null";
+        }
+        builder.append(name).append('=').append(value);
     }
 
 }
