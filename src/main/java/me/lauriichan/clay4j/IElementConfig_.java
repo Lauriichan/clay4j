@@ -1,6 +1,8 @@
 package me.lauriichan.clay4j;
 
 import me.lauriichan.clay4j.Layout.HAlignment;
+import me.lauriichan.clay4j.buildergen.BuilderDefault;
+import me.lauriichan.clay4j.buildergen.BuilderReference;
 import me.lauriichan.clay4j.buildergen.GenerateBuilder;
 import me.lauriichan.clay4j.data.TextElementData;
 
@@ -21,6 +23,15 @@ public interface IElementConfig_ {
     @GenerateBuilder
     public static record Text(String text, IFont font, int fontSize, int letterSpacing, int lineHeight, WrapMode wrapMode,
         HAlignment alignment) implements IElementConfig_ {
+
+        @BuilderDefault("fontSize")
+        public static final int DEFAULT_FONT_SIZE = 16;
+        @BuilderDefault("letterSpacing")
+        public static final int DEFAULT_LETTER_SPACING = 0;
+        @BuilderDefault("wrapMode")
+        public static final WrapMode DEFAULT_WRAP_MODE = WrapMode.WRAP_NEWLINES;
+        @BuilderDefault("alignment")
+        public static final HAlignment DEFAULT_ALIGNMENT = HAlignment.LEFT;
 
         public static enum WrapMode {
 
@@ -142,7 +153,7 @@ public interface IElementConfig_ {
     }
     
     @GenerateBuilder
-    public static record Border(BorderWidth width) implements IElementConfig_ {
+    public static record Border(@BuilderReference BorderWidth width) implements IElementConfig_ {
         
         @Override
         public int priority() {

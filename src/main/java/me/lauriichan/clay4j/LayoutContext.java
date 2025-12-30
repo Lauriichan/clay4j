@@ -1106,7 +1106,7 @@ public final class LayoutContext {
             font.calculateSize(text.substring(start, end), fontSize, dimensions);
             measured.iWords.add(new MeasuredWord(start, end - start, dimensions[0]));
             lineWidth += dimensions[0];
-            measuredHeight = Math.max(measuredHeight, dimensions[0]);
+            measuredHeight = Math.max(measuredHeight, dimensions[1]);
             measured.minWidth = Math.max(dimensions[0], measured.minWidth);
         }
         measuredWidth = Math.max(lineWidth, measuredWidth) - config.letterSpacing();
