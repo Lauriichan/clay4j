@@ -517,12 +517,13 @@ public final class LayoutContext {
                     context.emitRectangle = element.layout.renderBackground();
                     context.offscreen = context.isOffscreen(elementBox);
                     context.boundingBox = elementBox;
+                    int currentIndex = renderCommands.size();
                     for (IElementConfig config : element.layout.configs()) {
                         config.buildCommands(context, element, config);
                     }
 
                     if (context.emitRectangle) {
-                        renderCommands.push(new RenderCommand(RenderCommand.RECTANGLE_RENDERER_ID, context.zIndex, element, elementBox));
+                        renderCommands.add(currentIndex, new RenderCommand(RenderCommand.RECTANGLE_RENDERER_ID, context.zIndex, element, elementBox));
                     }
 
                     if (!element.isText) {
