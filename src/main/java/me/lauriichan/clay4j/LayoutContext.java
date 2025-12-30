@@ -134,6 +134,10 @@ public final class LayoutContext {
         this.layoutWidth = layoutWidth;
         this.layoutHeight = layoutHeight;
     }
+    
+    public int rootAmount() {
+        return roots.size();
+    }
 
     public float width() {
         return layoutWidth;
@@ -150,6 +154,10 @@ public final class LayoutContext {
         this.layoutWidth = width;
         this.layoutHeight = height;
         changed = true;
+    }
+    
+    public Element elementById(String id) {
+        return id2elementMap.get(id);
     }
 
     public float pointerX() {
