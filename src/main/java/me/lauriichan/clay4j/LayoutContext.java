@@ -886,13 +886,14 @@ public final class LayoutContext {
                 Element child;
                 ISizing sizing;
                 float size;
+                int index = stack.size();
                 for (int i = 0; i < parent.children.size(); i++) {
                     child = parent.children.get(i);
                     sizing = xAxis ? child.layout.width() : child.layout.height();
                     size = xAxis ? child.width : child.height;
                     
                     if (!child.children.isEmpty()) {
-                        stack.push(child);
+                        stack.add(index, child);
                     }
 
                     if (sizing.type() != ISizing.Type.PERCENTAGE && sizing.type() != ISizing.Type.FIXED
