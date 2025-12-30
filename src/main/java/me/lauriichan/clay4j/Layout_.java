@@ -43,12 +43,7 @@ public record Layout_(ISizing width, ISizing height, Padding padding, int childG
         if (list == null) {
             return ObjectLists.emptyList();
         }
-        list.sort((e1, e2) -> {
-            if (e1 instanceof IElementConfig.Border || e2 instanceof IElementConfig.Clip) {
-                return 1;
-            }
-            return 0;
-        });
+        list.sort((e1, e2) -> Integer.compare(e1.priority(), e2.priority()));
         return list;
     }
     

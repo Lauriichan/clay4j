@@ -12,6 +12,10 @@ public interface IElementConfig_ {
     
     default void buildCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {}
 
+    default int priority() {
+        return 0;
+    }
+    
     public static record AspectRatio(float aspectRatio) implements IElementConfig_ {}
 
     @GenerateBuilder
@@ -126,6 +130,11 @@ public interface IElementConfig_ {
         implements IElementConfig_ {
         
         @Override
+        public int priority() {
+            return -100;
+        }
+        
+        @Override
         public void buildCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
             context.push(new RenderCommand(RenderCommand.CLIPPING_START_ID, element, context.boundingBox()));
         }
@@ -134,6 +143,11 @@ public interface IElementConfig_ {
     
     @GenerateBuilder
     public static record Border(BorderWidth width) implements IElementConfig_ {
+        
+        @Override
+        public int priority() {
+            return 100;
+        }
         
         @GenerateBuilder
         public static record BorderWidth(int left, int right, int top, int bottom, boolean betweenChildren) {}
