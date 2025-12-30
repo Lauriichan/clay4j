@@ -37,6 +37,8 @@ public final class Element_ implements AutoCloseable {
     float minWidth, width;
     float minHeight, height;
     
+    float percentageMaxY;
+    
     boolean hovered = false;
 
     int zIndex = 0;

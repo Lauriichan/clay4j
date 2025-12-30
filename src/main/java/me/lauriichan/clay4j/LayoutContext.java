@@ -754,8 +754,6 @@ public final class LayoutContext {
         for (Element element : aspectRatioElements) {
             config = element.layout.config(IElementConfig.AspectRatio.class).get();
             element.height = (1 - config.aspectRatio()) * element.width;
-            // This should scale the max height but that is not really possible right now
-            // so we will skip this
         }
     }
 
@@ -770,22 +768,35 @@ public final class LayoutContext {
     private void propergateVerticalEffects() {
         for (Element root : roots) {
             for (Element parent : root.parentElements) {
+                float min, max;
                 if (parent.layout.layoutDirection() == LayoutDirection.LEFT_TO_RIGHT) {
+                    if (parent.layout.width().type() == ISizing.Type.PERCENTAGE) {
+                        min = 0f;
+                        max = parent.width;
+                    } else {
+                        min = parent.layout.width().minMax().min();
+                        max = parent.layout.width().minMax().max();
+                    }
                     float childHeightWithPadding;
                     float parentPadding = parent.layout.padding().top() + parent.layout.padding().bottom();
                     for (Element child : parent.children) {
                         childHeightWithPadding = Math.max(child.height + parentPadding, parent.height);
-                        parent.height = Math.min(Math.max(childHeightWithPadding, parent.layout.height().minMax().min()),
-                            parent.layout.height().minMax().max());
+                        parent.height = Math.min(Math.max(childHeightWithPadding, min), max);
                     }
                 } else {
+                    if (parent.layout.height().type() == ISizing.Type.PERCENTAGE) {
+                        min = 0f;
+                        max = parent.height;
+                    } else {
+                        min = parent.layout.height().minMax().min();
+                        max = parent.layout.height().minMax().max();
+                    }
                     float contentHeight = parent.layout.padding().top() + parent.layout.padding().bottom();
                     for (Element child : parent.children) {
                         contentHeight += child.height;
                     }
                     contentHeight += Math.max(parent.children.size() - 1, 0) * parent.layout.childGap();
-                    parent.height = Math.min(Math.max(contentHeight, parent.layout.height().minMax().min()),
-                        parent.layout.height().minMax().max());
+                    parent.height = Math.min(Math.max(contentHeight, min), max);
                 }
             }
         }
