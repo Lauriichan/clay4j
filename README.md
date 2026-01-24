@@ -18,14 +18,14 @@ Get it from my maven repository
     <dependency>
         <groupId>me.lauriichan</groupId>
         <artifactId>clay4j</artifactId>
-        <version>0.0.1</version>
+        <version>0.1.0</version>
     </dependency>
 </dependencies>
 ```
 
 ## Basic usage
 
-This is still work in progress but you _can try_ to use it.
+This is still work in progress but you _should be able__ to use it well.
 ```Java
 LayoutContext context = new LayoutContext();
 
@@ -79,8 +79,11 @@ layout.finalize();
 
 This is as far as you can get with the library until now.
 There is no way to retrieve the information about the layout yet except if you keep yourself a reference to each Element you care about.
+(You can also get the element by id from the layout)
 
-It is not yet able to resize/wrap text and it doesn't calculate the positions of elements yet.
+The scrollable containers are probably not fully functional yet haven't tested but everything else seems to work.
+
+If you want you can checkout the (Brick-Force Aurora Launcher)[https://github.com/Brick-Force-Aurora/Launcher/blob/new-java-launcher/src/main/java/de/brickforceaurora/launcher/ui/UserInterface.java] user interface as it uses this library for rendering.
 
 ## Goal
 
