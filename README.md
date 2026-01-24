@@ -25,7 +25,7 @@ Get it from my maven repository
 
 ## Basic usage
 
-This is still work in progress but you _should be able__ to use it well.
+This is still work in progress but you _should be able_ to use it well.
 ```Java
 LayoutContext context = new LayoutContext();
 
