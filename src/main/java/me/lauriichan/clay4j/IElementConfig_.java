@@ -12,8 +12,10 @@ public interface IElementConfig_ {
         return null;
     }
     
-    default void buildCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {}
+    default void buildOpenCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {}
 
+    default void buildCloseCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {}
+    
     default int priority() {
         return 0;
     }
@@ -52,7 +54,7 @@ public interface IElementConfig_ {
         }
         
         @Override
-        public void buildCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
+        public void buildOpenCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
             if (context.offscreen()) {
                 return;
             }
@@ -146,8 +148,19 @@ public interface IElementConfig_ {
         }
         
         @Override
-        public void buildCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
+        public void buildOpenCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
+            if (element.elementId == null || (!horizontal && !vertical)) {
+                return;
+            }
             context.push(new RenderCommand(RenderCommand.CLIPPING_START_ID, element, context.boundingBox()));
+        }
+        
+        @Override
+        public void buildCloseCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
+            if (element.elementId == null || (!horizontal && !vertical)) {
+                return;
+            }
+            context.push(new RenderCommand(RenderCommand.CLIPPING_END_ID, element, context.boundingBox()));
         }
         
     }
@@ -162,6 +175,11 @@ public interface IElementConfig_ {
         
         @GenerateBuilder
         public static record BorderWidth(int left, int right, int top, int bottom, boolean betweenChildren) {}
+        
+        @Override
+        public void buildCloseCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
+            // TODO: Add support for borders
+        }
         
     }
 

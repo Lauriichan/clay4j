@@ -1,5 +1,6 @@
 package me.lauriichan.clay4j;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
@@ -519,7 +520,7 @@ public final class LayoutContext {
                     context.boundingBox = elementBox;
                     int currentIndex = renderCommands.size();
                     for (IElementConfig config : element.layout.configs()) {
-                        config.buildCommands(context, element, config);
+                        config.buildOpenCommands(context, element, config);
                     }
 
                     if (context.emitRectangle) {
@@ -577,22 +578,23 @@ public final class LayoutContext {
                         }
                     }
                 } else {
-                    boolean closeClip = false;
+                    context.emitRectangle = element.layout.renderBackground();
+                    context.offscreen = context.isOffscreen(element.boundingBox);
+                    context.boundingBox = element.boundingBox;
+                    context.emitRectangle = false;
+                    
                     if (element.elementId != null && (element.clipsHorizontal || element.clipsVertical)) {
-                        closeClip = true;
                         IElementConfig.Clip clip = element.layout.config(IElementConfig.Clip.class).orElse(null);
                         scrollOffsetX = clip.xChildOffset();
                         scrollOffsetY = clip.yChildOffset();
                     }
-
-                    // TODO: Support borders
-                    //                    IElementConfig.Border borderConfig = element.layout.config(IElementConfig.Border.class).orElse(null);
-                    //                    if (borderConfig != null) {
-                    //                        
-                    //                    }
-                    if (closeClip) {
-                        renderCommands
-                            .push(new RenderCommand(RenderCommand.CLIPPING_END_ID, element, element.boundingBox));
+                    
+                    // We go reverse order here
+                    List<IElementConfig> configs = element.layout.configs();
+                    IElementConfig config;
+                    for (int index = configs.size() - 1; index >= 0; index--) {
+                        config = configs.get(index);
+                        config.buildCloseCommands(context, element, config);
                     }
 
                     nodes.removeLast();
