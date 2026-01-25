@@ -3,7 +3,7 @@ package me.lauriichan.clay4j;
 public record RenderCommand(String id, int zIndex, Element element, BoundingBox boundingBox, Object data) {
 
     public static final String TEXT_RENDERER_ID = "text";
-    public static final String RECTANGLE_RENDERER_ID = "rectangle";
+    public static final String BACKGROUND_RECTANGLE_RENDERER_ID = "background_rectangle";
 
     public static final String CLIPPING_START_ID = "clipping_start";
     public static final String CLIPPING_END_ID = "clipping_end";

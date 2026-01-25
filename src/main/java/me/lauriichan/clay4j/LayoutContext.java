@@ -524,7 +524,7 @@ public final class LayoutContext {
                     }
 
                     if (context.emitRectangle) {
-                        renderCommands.add(currentIndex, new RenderCommand(RenderCommand.RECTANGLE_RENDERER_ID, context.zIndex, element, elementBox));
+                        renderCommands.add(currentIndex, new RenderCommand(RenderCommand.BACKGROUND_RECTANGLE_RENDERER_ID, context.zIndex, element, elementBox));
                     }
 
                     if (!element.isText) {
