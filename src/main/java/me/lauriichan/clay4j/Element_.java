@@ -9,6 +9,7 @@ import me.lauriichan.clay4j.Layout.LayoutDirection;
 import me.lauriichan.clay4j.buildergen.BuilderReference;
 import me.lauriichan.clay4j.buildergen.FieldReference;
 import me.lauriichan.clay4j.buildergen.GenerateBuilder;
+import me.lauriichan.clay4j.util.DebugPrinter;
 
 @GenerateBuilder(name = "newElement", internal = true, rootName = "builder")
 public final class Element_ implements AutoCloseable {
@@ -195,27 +196,17 @@ public final class Element_ implements AutoCloseable {
     
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        appendField(builder, "elementId", elementId);
-        appendField(builder, "clipElementId", clipElementId);
-        appendField(builder, "x", x);
-        appendField(builder, "y", y);
-        appendField(builder, "z", zIndex);
-        appendField(builder, "width", width);
-        appendField(builder, "minWidth", minWidth);
-        appendField(builder, "height", height);
-        appendField(builder, "minHeight", minHeight);
-        return builder.insert(0, "Element[").append(']').toString();
-    }
-    
-    private void appendField(StringBuilder builder, String name, Object value) {
-        if (!builder.isEmpty()) {
-            builder.append(", ");
-        }
-        if (value == null) {
-            value = "null";
-        }
-        builder.append(name).append('=').append(value);
+        DebugPrinter printer = new DebugPrinter();
+        printer.append("elementId", elementId);
+        printer.append("clipElementId", clipElementId);
+        printer.append("x", x);
+        printer.append("y", y);
+        printer.append("z", zIndex);
+        printer.append("width", width);
+        printer.append("minWidth", minWidth);
+        printer.append("height", height);
+        printer.append("minHeight", minHeight);
+        return printer.toString();
     }
 
 }

@@ -1,5 +1,7 @@
 package me.lauriichan.clay4j;
 
+import me.lauriichan.clay4j.util.DebugPrinter;
+
 public final class BoundingBox {
 
     float x, y;
@@ -30,6 +32,16 @@ public final class BoundingBox {
 
     public boolean isInside(float x, float y) {
         return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height;
+    }
+    
+    @Override
+    public String toString() {
+        DebugPrinter printer = new DebugPrinter();
+        printer.append("x", x);
+        printer.append("y", y);
+        printer.append("width", width);
+        printer.append("height", height);
+        return printer.toString();
     }
 
 }

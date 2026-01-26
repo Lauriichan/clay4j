@@ -2,6 +2,8 @@ package me.lauriichan.clay4j;
 
 import java.util.function.Consumer;
 
+import me.lauriichan.clay4j.util.DebugPrinter;
+
 public final class ElementContext {
 
     private final float layoutWidth, layoutHeight;
@@ -56,6 +58,18 @@ public final class ElementContext {
 
     public void push(RenderCommand command) {
         pushCommand.accept(command);
+    }
+    
+    @Override
+    public String toString() {
+        DebugPrinter printer = new DebugPrinter();
+        printer.append("layoutWidth", layoutWidth);
+        printer.append("layoutHeight", layoutHeight);
+        printer.append("zIndex", zIndex);
+        printer.append("offscreen", offscreen);
+        printer.append("emitRectangle", emitRectangle);
+        printer.append("boundingBox", boundingBox);
+        return printer.toString();
     }
 
 }
