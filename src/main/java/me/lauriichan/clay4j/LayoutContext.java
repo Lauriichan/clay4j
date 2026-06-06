@@ -709,18 +709,16 @@ public final class LayoutContext {
         float[] tmpSize = new float[2];
         for (Element textElement : textElements) {
             IElementConfig.Text config = textElement.layout.config(IElementConfig.Text.class).get();
-            if (config.wrapMode() == WrapMode.WRAP_NONE) {
-                continue;
-            }
             TextElementData textData = textElement.data(TextElementData.class).get();
             textData.reset();
             MeasuredText measured = measuredText(time, config);
-            float lineWidth = 0, lineHeight = config.lineHeight() > 0 ? config.lineHeight() : textData.preferredHeight;
-            int lineLength = 0, lineStartOffset = 0;
-            if (!measured.containsNewLines() && textData.preferredWidth <= textElement.width) {
+            if (config.wrapMode() == WrapMode.WRAP_NONE || (config.wrapMode() == WrapMode.WRAP_NEWLINES && !measured.containsNewLines())
+                || (!measured.containsNewLines() && textData.preferredWidth <= textElement.width)) {
                 textData.add(new TextElementData.Line(textElement.width, textElement.height, config.text()));
                 continue;
             }
+            float lineWidth = 0, lineHeight = config.lineHeight() > 0 ? config.lineHeight() : textData.preferredHeight;
+            int lineLength = 0, lineStartOffset = 0;
             String text = config.text();
             config.font().calculateSize(" ", config.fontSize(), tmpSize);
             float spaceWidth = tmpSize[0];
