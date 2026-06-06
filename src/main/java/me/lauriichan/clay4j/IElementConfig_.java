@@ -11,29 +11,29 @@ public interface IElementConfig_ {
     default IElementData buildData(Element element) {
         return null;
     }
-    
+
     default void buildOpenCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {}
 
     default void buildCloseCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {}
-    
+
     default int priority() {
         return 0;
     }
-    
+
     public static record AspectRatio(float aspectRatio) implements IElementConfig_ {}
 
     @GenerateBuilder
-    public static record Text(String text, IFont font, int fontSize, int letterSpacing, int lineHeight, WrapMode wrapMode,
+    public static record Text(String text, IFont font, float fontSize, int letterSpacing, int lineHeight, WrapMode wrapMode,
         HAlignment alignment) implements IElementConfig_ {
 
         @BuilderDefault("fontSize")
-        public static final int DEFAULT_FONT_SIZE = 16;
+        public static final float DEFAULT_FONT_SIZE = 16;
         @BuilderDefault("letterSpacing")
         public static final int DEFAULT_LETTER_SPACING = 0;
         @BuilderDefault("wrapMode")
         public static final WrapMode DEFAULT_WRAP_MODE = WrapMode.WRAP_NEWLINES;
         @BuilderDefault("alignment")
-        public static final HAlignment DEFAULT_ALIGNMENT = HAlignment.LEFT;
+        public static final HAlignment DEFAULT_HORIZONTAL_ALIGNMENT = HAlignment.LEFT;
 
         public static enum WrapMode {
 
@@ -52,7 +52,7 @@ public interface IElementConfig_ {
             element.minHeight = element.height;
             return new TextElementData(measured.width(), measured.height());
         }
-        
+
         @Override
         public void buildOpenCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
             if (context.offscreen()) {
@@ -71,13 +71,14 @@ public interface IElementConfig_ {
                     yPosition += finalLineHeight;
                     continue;
                 }
-                float offset = (box.width - line.width());
+                float offsetX = box.width - line.width();
                 if (config.alignment() == HAlignment.LEFT) {
-                    offset = 0f;
+                    offsetX = 0f;
                 } else if (config.alignment() == HAlignment.CENTER) {
-                    offset /= 2f;
+                    offsetX /= 2f;
                 }
-                context.push(new RenderCommand(RenderCommand.TEXT_RENDERER_ID, context.zIndex, element, new BoundingBox(box.x + offset, box.y + yPosition, line.width(), line.height()), line.text()));
+                context.push(new RenderCommand(RenderCommand.TEXT_RENDERER_ID, context.zIndex, element,
+                    new BoundingBox(box.x + offsetX, box.y + yPosition, line.width(), line.height()), line.text()));
                 yPosition += finalLineHeight;
                 if (box.y + yPosition > context.layoutHeight()) {
                     break;
@@ -89,7 +90,8 @@ public interface IElementConfig_ {
 
     @GenerateBuilder
     public static record Floating(float xOffset, float yOffset, float expandWidth, float expandHeight, int zIndex, AttachPointType element,
-        AttachPointType parent, PointerCaptureMode captureMode, AttachToElement attachTo, ClipToElement clipTo, String elementId) implements IElementConfig_ {
+        AttachPointType parent, PointerCaptureMode captureMode, AttachToElement attachTo, ClipToElement clipTo, String elementId)
+        implements IElementConfig_ {
 
         public static enum AttachPointType {
 
@@ -122,14 +124,14 @@ public interface IElementConfig_ {
             ATTACH_TO_ROOT;
 
         }
-        
+
         public static enum PointerCaptureMode {
 
             CAPTURE,
             PASSTHROUGH;
 
         }
-        
+
         @Override
         public IElementData buildData(Element element) {
             element.zIndex = zIndex;
@@ -139,14 +141,13 @@ public interface IElementConfig_ {
     }
 
     @GenerateBuilder
-    public static record Clip(boolean horizontal, boolean vertical, float xChildOffset, float yChildOffset)
-        implements IElementConfig_ {
-        
+    public static record Clip(boolean horizontal, boolean vertical, float xChildOffset, float yChildOffset) implements IElementConfig_ {
+
         @Override
         public int priority() {
             return -100;
         }
-        
+
         @Override
         public void buildOpenCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
             if (element.elementId == null || (!horizontal && !vertical)) {
@@ -154,7 +155,7 @@ public interface IElementConfig_ {
             }
             context.push(new RenderCommand(RenderCommand.CLIPPING_START_ID, element, context.boundingBox()));
         }
-        
+
         @Override
         public void buildCloseCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
             if (element.elementId == null || (!horizontal && !vertical)) {
@@ -162,25 +163,25 @@ public interface IElementConfig_ {
             }
             context.push(new RenderCommand(RenderCommand.CLIPPING_END_ID, element, context.boundingBox()));
         }
-        
+
     }
-    
+
     @GenerateBuilder
     public static record Border(@BuilderReference BorderWidth width) implements IElementConfig_ {
-        
+
         @Override
         public int priority() {
             return 100;
         }
-        
+
         @GenerateBuilder
         public static record BorderWidth(int left, int right, int top, int bottom, boolean betweenChildren) {}
-        
+
         @Override
         public void buildCloseCommands(ElementContext context, Element element, IElementConfig_ elementConfig) {
             // TODO: Add support for borders
         }
-        
+
     }
 
 }

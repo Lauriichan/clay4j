@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import me.lauriichan.clay4j.buildergen.BuilderDefault;
+import me.lauriichan.clay4j.buildergen.BuilderSetter;
 import me.lauriichan.clay4j.buildergen.BuilderTransformer;
 import me.lauriichan.clay4j.buildergen.GenerateBuilder;
 import me.lauriichan.clay4j.buildergen.ListReference;
@@ -57,6 +58,12 @@ public record Layout_(ISizing width, ISizing height, Padding padding, int childG
     }
 
     @GenerateBuilder
+    @BuilderSetter(name = "all", values = {
+        "left",
+        "right",
+        "top",
+        "bottom"
+    })
     public static record Padding(int left, int right, int top, int bottom) {
         
         @BuilderDefault({

@@ -59,7 +59,8 @@ public final class LayoutContext {
 
         private final ObjectArrayList<MeasuredWord> iWords = new ObjectArrayList<>();
 
-        public final int textHash, fontId, fontSize;
+        public final int textHash, fontId;
+        public final float fontSize;
         public final ObjectList<MeasuredWord> words = ObjectLists.unmodifiable(iWords);
 
         private volatile long lastAccess;
@@ -68,7 +69,7 @@ public final class LayoutContext {
         private float width, height;
         private boolean containsNewLines = false;
 
-        public MeasuredText(long lastAccess, int textHash, int fontId, int fontSize) {
+        public MeasuredText(long lastAccess, int textHash, int fontId, float fontSize) {
             this.lastAccess = lastAccess;
             this.textHash = textHash;
             this.fontId = fontId;
@@ -96,8 +97,8 @@ public final class LayoutContext {
             return hash(textHash, fontId, fontSize);
         }
 
-        public static int hash(int textHash, int fontId, int fontSize) {
-            return textHash + (fontId << 8) + (fontSize << 16);
+        public static int hash(int textHash, int fontId, float fontSize) {
+            return textHash + (fontId << 8) + (Float.floatToIntBits(fontSize) << 16);
         }
 
     }
@@ -395,7 +396,7 @@ public final class LayoutContext {
         // Sort roots by z-index
         ObjectArrayList<Element> sortedRoots = new ObjectArrayList<>();
         sortedRoots.addAll(roots);
-        sortedRoots.sort((e1, e2) -> Integer.max(e1.zIndex, e2.zIndex));
+        sortedRoots.sort((e1, e2) -> Integer.compare(e1.zIndex, e2.zIndex));
 
         // Calculate final positions
         ObjectArrayList<RenderCommand> renderCommands = new ObjectArrayList<>();
@@ -535,9 +536,8 @@ public final class LayoutContext {
                                 contentWidth += child.width;
                                 contentHeight = Math.max(contentHeight, child.height);
                             }
-                            contentWidth += Math.max(0, element.children.size()) * element.layout.childGap();
-                            float extraSpace = element.width - (element.layout.padding().left() + element.layout.padding().right())
-                                - contentWidth;
+                            contentWidth += Math.max(0, element.children.size() - 1) * element.layout.childGap();
+                            float extraSpace = element.width - (element.layout.padding().left() + element.layout.padding().right() + contentWidth);
                             switch (element.layout.childHorizontalAlignment()) {
                             case LEFT:
                                 extraSpace = 0f;
@@ -556,8 +556,8 @@ public final class LayoutContext {
                                 contentHeight += child.height;
                                 contentWidth = Math.max(contentWidth, child.width);
                             }
-                            float extraSpace = element.height - (element.layout.padding().top() + element.layout.padding().bottom())
-                                - contentHeight;
+                            contentHeight += Math.max(0, element.children.size() - 1) * element.layout.childGap();
+                            float extraSpace = element.height - (element.layout.padding().top() + element.layout.padding().bottom() + contentHeight);
                             switch (element.layout.childVerticalAlignment()) {
                             case TOP:
                                 extraSpace = 0f;
@@ -714,7 +714,7 @@ public final class LayoutContext {
             MeasuredText measured = measuredText(time, config);
             if (config.wrapMode() == WrapMode.WRAP_NONE || (config.wrapMode() == WrapMode.WRAP_NEWLINES && !measured.containsNewLines())
                 || (!measured.containsNewLines() && textData.preferredWidth <= textElement.width)) {
-                textData.add(new TextElementData.Line(textElement.width, textElement.height, config.text()));
+                textData.add(new TextElementData.Line(Math.min(textElement.width, measured.width()), Math.max(textElement.height, measured.height()), config.text()));
                 continue;
             }
             float lineWidth = 0, lineHeight = config.lineHeight() > 0 ? config.lineHeight() : textData.preferredHeight;
@@ -756,7 +756,8 @@ public final class LayoutContext {
         IElementConfig.AspectRatio config;
         for (Element element : aspectRatioElements) {
             config = element.layout.config(IElementConfig.AspectRatio.class).get();
-            element.height = (1 - config.aspectRatio()) * element.width;
+            element.height = (1 / config.aspectRatio()) * element.width;
+            element.minHeight = element.height;
         }
     }
 
@@ -771,6 +772,9 @@ public final class LayoutContext {
     private void propergateVerticalEffects() {
         for (Element root : roots) {
             for (Element parent : root.parentElements) {
+                if (parent.children.isEmpty()) {
+                    continue;
+                }
                 float min, max;
                 if (parent.layout.layoutDirection() == LayoutDirection.LEFT_TO_RIGHT) {
                     if (parent.layout.width().type() == ISizing.Type.PERCENTAGE) {
@@ -889,14 +893,13 @@ public final class LayoutContext {
                 Element child;
                 ISizing sizing;
                 float size;
-                int index = stack.size();
                 for (int i = 0; i < parent.children.size(); i++) {
                     child = parent.children.get(i);
                     sizing = xAxis ? child.layout.width() : child.layout.height();
                     size = xAxis ? child.width : child.height;
                     
                     if (!child.children.isEmpty()) {
-                        stack.add(index, child);
+                        stack.add(child);
                     }
 
                     if (sizing.type() != ISizing.Type.PERCENTAGE && sizing.type() != ISizing.Type.FIXED
@@ -959,7 +962,7 @@ public final class LayoutContext {
                                     largest = size;
                                 }
                                 if (size < largest) {
-                                    secondLargest = Math.min(secondLargest, size);
+                                    secondLargest = Math.max(secondLargest, size);
                                     sizeToAdd = secondLargest - largest;
                                 }
                             }
@@ -1046,7 +1049,7 @@ public final class LayoutContext {
                             maxSize = Math.max(maxSize, innerSize);
                         }
                         if (sizing.type() == ISizing.Type.GROW) {
-                            size = Math.max(maxSize, sizing.minMax().max());
+                            size = Math.min(maxSize, sizing.minMax().max());
                         }
                         size = Math.max(minSize, Math.min(size, maxSize));
                     }
@@ -1060,7 +1063,8 @@ public final class LayoutContext {
      */
 
     public final MeasuredText measuredText(long time, IElementConfig.Text config) {
-        int textHash = config.text().hashCode(), fontId = config.font().id(), fontSize = config.fontSize();
+        int textHash = config.text().hashCode(), fontId = config.font().id();
+        float fontSize = config.fontSize();
         int hash = MeasuredText.hash(textHash, fontId, fontSize);
         MeasuredText measured = textCache.get(hash);
         if (measured != null) {
