@@ -378,7 +378,7 @@ public final class LayoutContext {
 
     public void calculateLayout() {
         changed = false;
-
+        
         // Size along x-axis
         sizeContainersAlongAxis(true);
         // Wrap text
@@ -709,6 +709,9 @@ public final class LayoutContext {
         float[] tmpSize = new float[2];
         for (Element textElement : textElements) {
             IElementConfig.Text config = textElement.layout.config(IElementConfig.Text.class).get();
+            if (config.wrapMode() == WrapMode.WRAP_NONE) {
+                continue;
+            }
             TextElementData textData = textElement.data(TextElementData.class).get();
             textData.reset();
             MeasuredText measured = measuredText(time, config);
