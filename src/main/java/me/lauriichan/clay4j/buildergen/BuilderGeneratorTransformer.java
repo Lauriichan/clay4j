@@ -135,10 +135,6 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
             }
         });
 
-        if (!dataSource.hasImport(Objects.class)) {
-            dataSource.addImport(Objects.class);
-        }
-
         References buildReferences = new References();
         References references = new References();
         for (MethodSource<?> method : methods) {
@@ -149,7 +145,8 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
                 String paramName = string(method.getAnnotation(BuilderTransformer.class), "value", "");
                 ParameterSource<?> param = parameters.stream().filter(src -> src.getName().equals(paramName)).findFirst().orElse(null);
                 if (param == null) {
-                    System.err.println("Couldn't find parameter reference '%s' for transformer method '%s'".formatted(paramName, method.getName()));
+                    System.err.println(
+                        "Couldn't find parameter reference '%s' for transformer method '%s'".formatted(paramName, method.getName()));
                     continue;
                 }
                 buildReferences.put(param, new TransformerRef(method.getName()));
@@ -213,9 +210,9 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
             });
             builderConstructor.setBody(builder.toString());
         }
+        // Create build() method
+        // This also generates all getter and setter using generateBuilderField()
         {
-            // Create build() method
-            // This also generates all getter and setter using generateBuilderField()
             StringBuilder builder = new StringBuilder();
             for (ParameterSource<?> parameter : parameters) {
                 IRef ref = references.get(parameter);
@@ -240,6 +237,49 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
                         .append(paramReference).append(')');
                 } else {
                     builder.append(paramReference);
+                }
+            }
+            // Add Builder method to builder class
+            {
+                AnnotationSource<?> settersAnnotation = dataSource.getAnnotation(BuilderSetter.BuilderSetters.class);
+                AnnotationSource<?>[] setters = null;
+                if (settersAnnotation != null) {
+                    setters = settersAnnotation.getAnnotationArrayValue();
+                } else {
+                    settersAnnotation = dataSource.getAnnotation(BuilderSetter.class);
+                    if (settersAnnotation != null) {
+                        setters = new AnnotationSource[] {
+                            settersAnnotation
+                        };
+                    }
+                }
+                if (setters != null) {
+                    for (AnnotationSource<?> setter : setters) {
+                        boolean singleValueSetter = bool(setter, "singleValue", true);
+                        String[] targetParams = stringArray(setter, "values");
+                        if (targetParams.length == 0) {
+                            continue;
+                        }
+                        StringBuilder setterBuilder = new StringBuilder();
+                        setterBuilder.append("public ").append(builderClass.getName()).append(' ').append(string(setter, "name", "generatedSetter"))
+                            .append("(");
+                        if (singleValueSetter) {
+                            setterBuilder.append(builderClass.getField(targetParams[0]).getType().getQualifiedName()).append(" value");
+                        } else {
+                            for (int i = 0; i < targetParams.length; i++) {
+                                if (i != 0) {
+                                    setterBuilder.append(", ");
+                                }
+                                setterBuilder.append(builderClass.getField(targetParams[0])).append(' ').append(targetParams[i]);
+                            }
+                        }
+                        setterBuilder.append(") {");
+                        for (int i = 0; i < targetParams.length; i++) {
+                            setterBuilder.append("this.").append(targetParams[i]).append(" = ").append(singleValueSetter ? "value" : targetParams[i])
+                                .append(';');
+                        }
+                        builderClass.addMethod(setterBuilder.append("return this; }").toString());
+                    }
                 }
             }
             builderClass.addMethod().setName("build").setPublic()
@@ -398,6 +438,9 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
                     return this;
                     """.formatted(name, defaultParam));
             } else {
+                if (!source.hasImport(Objects.class)) {
+                    source.addImport(Objects.class);
+                }
                 setter.setBody("""
                     this.%1$s = Objects.requireNonNull(%1$s);
                     return this;
@@ -473,6 +516,16 @@ public class BuilderGeneratorTransformer implements ISourceTransformer {
             return fallback;
         }
         return str;
+    }
+
+    private static final String[] EMPTY_ARR = new String[0];
+
+    private String[] stringArray(AnnotationSource<?> src, String name) {
+        String[] array = src.getStringArrayValue(name);
+        if (array == null) {
+            return EMPTY_ARR;
+        }
+        return array;
     }
 
     private boolean bool(AnnotationSource<?> src, String name, boolean fallback) {
