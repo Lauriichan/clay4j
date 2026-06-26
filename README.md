@@ -83,7 +83,7 @@ There is no way to retrieve the information about the layout yet except if you k
 
 The scrollable containers are probably not fully functional yet haven't tested but everything else seems to work.
 
-If you want you can checkout the [Brick-Force Aurora Launcher](https://github.com/Brick-Force-Aurora/Launcher/blob/new-java-launcher/src/main/java/de/brickforceaurora/launcher/ui/UserInterface.java) user interface as it uses this library for rendering.
+If you want you can checkout the [Brick-Force Aurora Launcher](https://github.com/Brick-Force-Aurora/Launcher/blob/new-java-launcher/src/main/java/de/brickforceaurora/launcher/ui/UserInterface.java) user interface as it uses this library for layouting.
 
 ## Goal
 
